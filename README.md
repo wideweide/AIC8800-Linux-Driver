@@ -1,48 +1,93 @@
 # AIC8800 Linux Driver
 
-AIC8800 WiFi 驱动程序,适用于 Arch Linux 平台。
+AIC8800 WiFi 驱动程序。
 
 ## 概述
 
-本驱动修复了 AIC8800 芯片在 Linux Kernel 6.17.1-arch1-1 版本下的编译错误问题。\
-**2025.11.11更新**： Linux Kernel 6.17.7-arch1-1 在Arch Linux x64平台上仍可以编译通过
+本驱动在原版基础上修复了 Linux Kernel 7.0 内核下的编译与运行问题：
+
+- **`in_irq()` 编译错误**：Linux 5.18 起移除了 `in_irq()` 宏，7.0 内核中彻底不存在，编译报 `implicit declaration of function 'in_irq'`。已替换为等价的 `in_hardirq()`。
+- **modpost 符号链接错误**：`aic8800_fdrv` 引用 `aic_load_fw` 通过 `EXPORT_SYMBOL` 导出的符号，单独编译时 modpost 报 undefined。已在 Makefile 中添加 `KBUILD_MODPOST_WARN=1` 降级为警告。
+- **固件不匹配**：原项目自带的 `aic8800D80` 固件文件名与代码期望的 `8800dc` 命名不匹配，导致 probe 失败。已替换为 [idawnlight/AIC8800DC](https://github.com/idawnlight/AIC8800DC) 项目的 `aic8800DC` 固件。
 
 ## 测试环境
 
-- **平台**: Arch Linux
-- **内核版本**: Linux 6.17.1-arch1-1
-- **外联网卡**: 绿联AX300-CM762
+- **平台**: Pop!_OS 24.04 LTS
+- **内核版本**: Linux 7.0.11-76070011-generic
+- **网卡**: Tenda AIC8800DC (VID:PID = 2604:0014)
+
+> 亦兼容 Arch Linux 6.17 内核。
+
 ## 致谢
 
 本项目参考了以下资源:
 
 - [绿联官方 AX300 驱动](https://www.ugreen.com/)
 - [sqlwwx/aic8800](https://github.com/sqlwwx/aic8800) 项目中的适配工作
-- 使用 codex 辅助进行代码修改
+- [idawnlight/AIC8800DC](https://github.com/idawnlight/AIC8800DC) 提供的 `aic8800DC` 固件文件
+- [BLUEMOON233/AIC8800-Linux-Driver](https://github.com/BLUEMOON233/AIC8800-Linux-Driver) 原始项目
 
 ## 编译安装
 
+### 一键安装（推荐）
+
 ```bash
-# 克隆仓库
-git clone https://github.com/BLUEMOON233/AIC8800-Linux-Driver.git
-
-#初始化
+# 进入项目目录
 cd AIC8800-Linux-Driver
-sudo su
-sh install_setup.sh
-cd drivers/aic8800
 
-# 编译
-make
+# 编译两个模块
+cd drivers/aic8800/aic_load_fw && make && cd -
+cd drivers/aic8800/aic8800_fdrv && make && cd -
 
-# 安装
-make install
-
-# 加载驱动
-modprobe cfg80211
-modprobe aic_load_fw
-modprobe aic8800_fdrv
+# 一键安装固件、模块并加载驱动
+sudo bash install_driver.sh
 
 # 查看驱动加载情况
 lsmod | grep aic
 ```
+
+### 手动安装
+
+```bash
+# 安装固件和 udev 规则
+sudo cp -rf fw/aic8800DC /lib/firmware/
+sudo cp tools/aic.rules /etc/udev/rules.d/
+sudo udevadm control --reload
+sudo udevadm trigger
+
+# 编译安装 aic_load_fw（须先于 aic8800_fdrv）
+cd drivers/aic8800/aic_load_fw
+make
+sudo make install
+sudo depmod -a
+
+# 编译安装 aic8800_fdrv
+cd ../aic8800_fdrv
+make
+sudo make install
+sudo depmod -a
+
+# 加载驱动
+sudo modprobe cfg80211
+sudo modprobe aic_load_fw
+sudo modprobe aic8800_fdrv
+
+# 配置开机自动加载
+sudo tee /etc/modules-load.d/aic8800.conf > /dev/null << 'EOF'
+aic8800_fdrv
+aic_load_fw
+EOF
+```
+
+## 卸载
+
+```bash
+# 一键卸载
+sudo bash uninstall_all.sh
+```
+
+## 注意事项
+
+- 编译需要内核头文件：`sudo apt install linux-headers-$(uname -r) build-essential`
+- **内核更新后需重新编译安装**，因为内核模块与内核版本严格绑定（vermagic 必须匹配）
+- `depmod` 报 `zstd: Data corruption` 警告是 Pop!_OS 内核的已知问题，不影响驱动使用

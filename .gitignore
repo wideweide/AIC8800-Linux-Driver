@@ -1,0 +1,27 @@
+# 编译产物
+*.o
+*.o.*
+*.ko
+*.ko.*
+*.mod
+*.mod.*
+*.mod.c
+*.mod.o
+*.cmd
+.*.cmd
+modules.order
+Module.symvers
+Module.markers
+modules.builtin
+.tmp_versions/
+.cache.mk
+.modules.order.cmd
+.Module.symvers.cmd
+
+# 链接临时文件
+*.a
+*.tmp
+
+# 备份文件
+*.bak
+*~

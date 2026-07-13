@@ -29,22 +29,21 @@ AIC8800 WiFi 驱动程序。
 
 ## 编译安装
 
-### 一键安装（推荐）
+> **每次内核升级后必须重新编译安装**，因为内核模块的 vermagic 必须与运行内核完全匹配。
+
+### 一键编译安装（推荐）
 
 ```bash
-# 进入项目目录
 cd AIC8800-Linux-Driver
 
-# 编译两个模块
-cd drivers/aic8800/aic_load_fw && make && cd -
-cd drivers/aic8800/aic8800_fdrv && make && cd -
+# 编译 → 校验 → 安装 → 加载 → 验证（全自动）
+sudo bash build_install.sh
 
-# 一键安装固件、模块并加载驱动
-sudo bash install_driver.sh
-
-# 查看驱动加载情况
-lsmod | grep aic
+# 仅编译校验（不需要 root）
+bash build_install.sh --build-only
 ```
+
+脚本自动完成 7 个步骤：前置检查 → 清理 → 编译 aic_load_fw → 编译 aic8800_fdrv → 校验 vermagic → 安装固件和模块 → 加载验证。
 
 ### 手动安装
 
@@ -72,7 +71,7 @@ sudo modprobe cfg80211
 sudo modprobe aic_load_fw
 sudo modprobe aic8800_fdrv
 
-# 配置开机自动加载
+# 配置开机自动加载（仅首次）
 sudo tee /etc/modules-load.d/aic8800.conf > /dev/null << 'EOF'
 aic8800_fdrv
 aic_load_fw

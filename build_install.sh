@@ -172,11 +172,11 @@ echo "--- 开机自动加载 ---"
 if [ -f /etc/modules-load.d/aic8800.conf ]; then
     echo "  已配置 ✅"
 else
-    echo "  未配置，执行以下命令配置:"
-    echo "  sudo tee /etc/modules-load.d/aic8800.conf > /dev/null << 'EOF'"
-    echo "  aic8800_fdrv"
-    echo "  aic_load_fw"
-    echo "  EOF"
+    tee /etc/modules-load.d/aic8800.conf > /dev/null << 'EOF'
+aic8800_fdrv
+aic_load_fw
+EOF
+    echo "  已配置 ✅ (首次运行，已自动写入)"
 fi
 
 echo ""

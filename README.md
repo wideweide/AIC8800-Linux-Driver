@@ -13,10 +13,10 @@ AIC8800 WiFi 驱动程序。
 ## 测试环境
 
 - **平台**: Pop!_OS 24.04 LTS
-- **内核版本**: Linux 7.0.11-76070011-generic
+- **内核版本**: Linux 7.1.5-76070105-generic
 - **网卡**: Tenda AIC8800DC (VID:PID = 2604:0014)
 
-> 亦兼容 Arch Linux 6.17 内核。
+> 亦兼容 Arch Linux 6.17 内核、Pop!_OS 7.0.11 内核。
 
 ## 致谢
 
@@ -90,3 +90,15 @@ sudo bash uninstall_all.sh
 - 编译需要内核头文件：`sudo apt install linux-headers-$(uname -r) build-essential`
 - **内核更新后需重新编译安装**，因为内核模块与内核版本严格绑定（vermagic 必须匹配）
 - `depmod` 报 `zstd: Data corruption` 警告是 Pop!_OS 内核的已知问题，不影响驱动使用
+
+## 更新日志
+
+### 2026-08-31 — 适配 Linux Kernel 7.1.5
+
+- **cfg80211 API 变更适配**：内核 7.1.0 起，`cfg80211_ops` 中多个回调函数的第二个参数从 `struct net_device *` 改为 `struct wireless_dev *`，涉及以下函数：
+  - `add_key` / `get_key` / `del_key`
+  - `set_default_mgmt_key`
+  - `add_station` / `del_station` / `change_station` / `get_station` / `dump_station`
+- **`cfg80211_new_sta` / `cfg80211_del_sta` 调用适配**：第一个参数从 `net_device *` 改为 `wireless_dev *`
+- **`ieee80211_mgmt` 结构体变更**：内核 7.1.0 起，`action` 结构体中的 `action_code` 提升为直接字段（不再嵌套在 `u.tdls_discover_resp` 内），内部 union 改为匿名（去掉 `.u` 层）
+- 所有修改均使用 `LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)` 条件编译，保持对旧内核的向后兼容

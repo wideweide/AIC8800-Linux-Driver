@@ -93,6 +93,14 @@ sudo bash uninstall_all.sh
 
 ## 更新日志
 
+### 2026-10-19 — 适配 Linux Kernel 7.2.6
+
+- **`strncpy` 替换为 `strscpy`**：内核 7.2 起移除了 `strncpy` 的隐式声明，`rwnx_msg_tx.c` 中使用 `strscpy` 替代
+- **`remain_on_channel` 回调签名变更**：内核 7.2 起新增 `const u8 *rx_addr` 参数
+- 所有修改均使用 `LINUX_VERSION_CODE >= KERNEL_VERSION(7, 2, 0)` 条件编译，保持对旧内核的向后兼容
+
+> *本次适配由 Trae IDE + Qwen3.6-Plus 辅助完成*
+
 ### 2026-08-31 — 适配 Linux Kernel 7.1.5
 
 - **cfg80211 API 变更适配**：内核 7.1.0 起，`cfg80211_ops` 中多个回调函数的第二个参数从 `struct net_device *` 改为 `struct wireless_dev *`，涉及以下函数：
